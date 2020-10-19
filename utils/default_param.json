@@ -1,0 +1,50 @@
+[{
+        "Gaussian": {
+            "std": "0.01"
+        },
+        "Stain": {
+            "size": "1-12",
+            "color": "10-220",
+            "irregularity": "0.1",
+            "blur": "0"
+        },
+        "Scratch": {
+            "color": "150"
+        },
+        "Drops": {
+            "size": "1-2",
+            "color": "220",
+            "irregularity": "0.01",
+            "number": "10",
+            "spacing": "0.1"
+        },
+        "Structural": {
+            "stain" : "0.6",
+            "scrath": "0.2", 
+            "drops": "0.2"
+        }, 
+        "StainOrGaussian": {
+            "stain": "0.6"
+        }
+    },
+
+	{
+		"coxa": {
+			"root": "/export/home/anncollin/Desktop/ADRIC/Server", 
+			"code": "/export/home/anncollin/Desktop/ADRIC/Server/code", 
+			"data": "/export/home/anncollin/Desktop/ADRIC/Server/data"
+		},
+		"cassiopee":{
+			"root": "/home/anncollin/anomaly_detection",
+			"code": "/home/anncollin/anomaly_detection/code", 
+			"data": "/home/anncollin/anomaly_detection/data"
+		}, 
+		"betelgeuse":{
+			"root": "/home/anncollin/anomaly_detection",
+			"code": "/home/anncollin/anomaly_detection/code", 
+			"data": "/data/workdir/anncollin/data"
+		} 
+		
+	}
+
+]
