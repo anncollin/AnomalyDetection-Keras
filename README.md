@@ -28,7 +28,7 @@ We realize that our implementation is not the most intuitive due the interaction
 
 <p align="center">
   <img width="500" src="https://github.com/anncollin/AnomalyDetection-Keras/blob/master/ReadmeImgs/StainNoiseModel.png"> <br>
-   <font size=4> The Stain noise model is a cubic interpolation between 20 points (orange dots), arranged in ascending order of polar coordinates, located around the border of an ellipse of variable size (blue line). The axes of the ellipse are comprised between 1 and 12% of the smallest image dimension and its eccentricity is randomly initialized. </font>
 </p> 
+*The Stain noise model is a cubic interpolation between 20 points (orange dots), arranged in ascending order of polar coordinates, located around the border of an ellipse of variable size (blue line). The axes of the ellipse are comprised between 1 and 12% of the smallest image dimension and its eccentricity is randomly initialized.*
 
 The definition of this Stain Corruption is contained in the `add_stain` function defined in the `datasets/add_corruption.py` file.
