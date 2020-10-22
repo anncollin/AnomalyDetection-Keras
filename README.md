@@ -44,9 +44,6 @@ The experiments are launched through a GUI called via the instruction `python ma
 3. **Train_Net** Define the network specifications and the training parameters in `hjson` files. 
 4. **Eval_net** Run evaluation on a trained network. This can include performance evaluation with a residual- and/or an uncertainty-based approach.
 
-<p float="left">
-  <img src="https://github.com/anncollin/AnomalyDetection-Keras/blob/master/ReadmeImgs/Import_DB.png" width="600" />
-  <img src="https://github.com/anncollin/AnomalyDetection-Keras/blob/master/ReadmeImgs/Corrupt_DB.png" width="600" />
-  <img src="https://github.com/anncollin/AnomalyDetection-Keras/blob/master/ReadmeImgs/Train_net.png" width="600" />
-  <img src="https://github.com/anncollin/AnomalyDetection-Keras/blob/master/ReadmeImgs/Eval_Net.png" width="600" />
-</p>
+<p align="center">
+  <img width="700" src="https://github.com/anncollin/AnomalyDetection-Keras/blob/master/ReadmeImgs/GUI.gif"> <br>
+</p> 
