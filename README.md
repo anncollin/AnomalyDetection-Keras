@@ -1,9 +1,11 @@
 # Anomaly Detection Framework for Industrial Vision
 
 ## Table of contents
-* [Overview](#overview)
-* [Dependencies](#dependencies)
-* [Key Components of the Implementation](#key-components)
+- [Overview](#Overview)
+- [Dependencies](#Dependencies)
+- [Key Components of the Implementation](#Key-Components-of-the-Implementation)
+  - [Interresting files : Definition of the Stain noise corruption](#Interresting-files-:-Definition-of-the-Stain-noise-corruption)
+  - [The Graphical User Interface](#The-Graphical-User-Interface)
 
 ## Overview 
 
@@ -26,7 +28,7 @@ More detailed informations are available in the `requirements.txt`.
 
 ### Interresting files : Definition of the Stain noise corruption
 
-We realize that our implementation is not the most intuitive due the interaction with the GUI to create the JSON files necessary to launch the training and evaluation procedures. However, our network architecture is a classical autoencoder and the training pipeline is standard. The novelty of the approach lies in the synthetic noise model used to corrupt our training images. This corruption is depicted below. 
+Our implementation relies on a GUI to create the JSON files necessary to launch the training and evaluation procedures. Handling this tool can look rather laborious. However, our network architecture is a classical autoencoder and the training pipeline is standard. For the readers that are interrested of identifying wether the method can improve theirs, they can focus on the understanding of the corruption model. The novelty of the approach lies in this synthetic noise model used to corrupt our training images. This corruption is depicted below. 
 
 <p align="center">
   <img width="500" src="https://github.com/anncollin/AnomalyDetection-Keras/blob/master/ReadmeImgs/StainNoiseModel.png"> <br>
