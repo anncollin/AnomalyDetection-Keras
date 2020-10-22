@@ -1,13 +1,14 @@
 # Anomaly Detection Framework for Industrial Vision
 
 ## Table of contents
-- [Overview](#Overview)
+- [Context](#Context)
+- [Overview of the Method](#Overview-of-the-Method)
 - [Dependencies](#Dependencies)
 - [Key Components of the Implementation](#Key-Components-of-the-Implementation)
   - [Definition of the Stain noise corruption](#Definition-of-the-Stain-noise-corruption)
   - [The Graphical User Interface](#The-Graphical-User-Interface)
-
-## Overview 
+  
+# Context 
 
 This repository contains the code related to our anomaly detection framework that uses an autoencoder trained on images corrupted with our Stain-shaped noise. The full paper is available on [ArXiv](https://arxiv.org/abs/2008.12977) and will be soon presented at ICPR2020. 
 
@@ -16,6 +17,19 @@ Illustration belows presents an overview of anomaly dectection results obtained 
 <p align="center">
   <img width="300" src="https://github.com/anncollin/AnomalyDetection-Keras/blob/master/ReadmeImgs/resultOverview.png"> <br>
 </p> 
+
+## Overview of the Method
+
+In this work, we adress the problem of anomaly detection in images for an industrial application. Our method is based on an autoencoder trained to map an
+arbitrary image, i.e. with or without any defect, to a clean image, i.e. without any defect. In this approach, the defects can be dected through: 
+- (commonly) a **residual-based approach** that evaluates the abnormality by measuring the absolute difference between the input image and its reconstructed clean version.
+- (alternatively) an **uncertainty-based approach** relies on the intuition that structures that are not seen during training, i.e. the anomalies, will correlate with higher uncertainties, as estimated by the variance between 30 output images inferred with the MCDropout technique.
+
+<p align="center">
+  <img width="500" src="https://github.com/anncollin/AnomalyDetection-Keras/blob/master/ReadmeImgs/Method.png"> <br>
+</p> 
+
+To improve the sharpness of the recontructed clean image, we consider an autoencoder architecture with skip connections. In the common scenario where only clean images are available for training, we propose to corrupt them with a synthetic noise model to prevent the convergence of the network towards the identity mapping, and introduce an original Stain noise model for that purpose. We show that this model favors the reconstruction of clean images from arbitrary real-world images, regardless of the actual defects appearance.
 
 ## Dependencies
 
