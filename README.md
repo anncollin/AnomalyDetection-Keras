@@ -3,7 +3,7 @@
 ## Table of contents
 * [Overview](#overview)
 * [Dependencies](#dependencies)
-* [Key Components of the Implementation](#Key-components)
+* [Key Components of the Implementation](#key-components)
 
 ## Overview 
 
@@ -38,7 +38,7 @@ The definition of this Stain Corruption is contained in the `add_stain` function
 
 ### The Graphical User Interface 
 
-The experiments are launched through a GUI. This interface is composed of four tabs namely:
+The experiments are launched through a GUI called via the instruction `python main.py -gui1`. This interface is composed of four tabs namely:
 1. **Import_DB** Thanks to the "browse" buttons, select the folder path to the clean images and the abnormal test images. 
 2. **Corrupt_DB** Define the specification of the synthetic noise model used to corrupt training images of a specific Database imported before. Default values are the one used in the paper. Also, a folder with test images corrupted with synthetic noise is also created at this time. 
 3. **Train_Net** Define the network specifications and the training parameters in `hjson` files. 
