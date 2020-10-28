@@ -3,6 +3,6 @@
     Depth: 6
     Dropout_rate: 0
     Filter_size: 5
-    Nb_feature_maps: 32
+    Nb_feature_maps: 16
     Patch: ""
 }
