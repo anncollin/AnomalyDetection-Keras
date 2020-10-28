@@ -1,0 +1,29 @@
+{
+    Data_augmentation_offline:
+    {
+        Grayscale: false
+        Histogram_Equalization: false
+        Illumination_Changes: false
+        Rotation_Translation: false
+        Offline_Corruption: false
+    }
+    Data_augmentation_online:
+    {
+        Rotation: 0.0
+        Horizontal_flip: false
+        Vertical_flip: false
+        Width_shift: 0.0
+        Height_shift: 0.0
+        Zoom: 0.0
+    }
+    Learning:
+    {
+        Batch_size: 16
+        Callback:  "ReduceonPlateau"
+        Epoch: 250
+        Learning_rate: 0.01
+        Loss: MSE
+        Optimizer: Adam
+        Save_weights_each_epoch: false
+    }
+}
