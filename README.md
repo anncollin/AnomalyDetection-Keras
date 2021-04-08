@@ -33,8 +33,8 @@ To improve the sharpness of the recontructed clean image, we consider an autoenc
 
 ## Dependencies
 
-Our implementation is built on Keras (version 2.3.1) and tensorflow-gpu (version 1.15.0). <br>
-The GUI in based on PySimpleGUI (version 4.16.0). 
+Our implementation is built on tensorflow (version 2.4.1). <br>
+The GUI in based on PySimpleGUI (version 4.38.0). 
 
 More detailed informations are available in the `requirements.txt`.
 
