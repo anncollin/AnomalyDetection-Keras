@@ -9,6 +9,74 @@ from skimage.draw import ellipse_perimeter, circle
 from scipy.interpolate import interp1d 
 from scipy.ndimage import gaussian_filter
 
+""" COLLIN Anne-Sophie """ 
+
+""" -----------------------------------------------------------------------------------------
+Corrupts a single with some type of noise
+INPUT : 
+    - img: image to corrupt
+    - args: dictionnary with all arguments (built with the GUI)
+OUTPUT: 
+    - temp: corrupted image
+----------------------------------------------------------------------------------------- """ 
+def corrupt_image(img, args): 
+    default = args['1_default']
+    if default == ['Gaussian'] :
+        img_modified = add_gaussian(img, float(args['1_p_0']))
+    elif default == 'Gaussian' :
+        img_modified = add_gaussian(img, float(args['std']))
+
+    elif default == ['Stain'] :
+        img_modified = add_stain(img, args['1_p_0'], args['1_p_1'], float(args['1_p_2']), float(args['1_p_3']))
+    elif default == 'Stain' :
+        img_modified = add_stain(img, args['size'], args['color'], float(args['irregularity']), float(args['blur']))
+
+
+    elif default == ['Scratch'] : 
+        img_modified = add_scratch(img, args['1_p_0'])
+    elif default == 'Scratch' : 
+        img_modified = add_scratch(img, args['color'])
+
+
+    elif default == ['Drops'] :
+        img_modified = add_drops(img, args['1_p_0'], args['1_p_1'], float(args['1_p_2']), int(args['1_p_3']), float(args['1_p_3']))
+    elif default == 'Drops' :
+        img_modified = add_drops(img, args['size'], args['color'], float(args['irregularity']), int(args['number']), float(args['spacing']))
+
+
+    elif default == ['Structural'] : 
+        prob = uniform(0,1)
+        if prob < float(args['1_p_0']) :
+            img_modified = add_stain(img, "1-12", "10-220", 0.1, 0.15)
+        elif prob >= float(args['1_p_0']) and prob <= ( float(args['1_p_0']) + float(args['1_p_1'])): 
+            img_modified = add_scratch(img,"10-220")
+        else : 
+            img_modified = add_drops(img, "1-2", "10-220", 0.1, 10, 0.1)
+    elif default == 'Structural' : 
+        prob = uniform(0,1)
+        if prob < float(args['drops']) :
+            img_modified = add_stain(img, "1-12", "10-220", 0.1, 0.15)
+        elif prob >= float(args['drops']) and prob <= ( float(args['drops']) + float(args['scrath'])): 
+            img_modified = add_scratch(img,"10-220")
+        else : 
+            img_modified = add_drops(img, "1-2", "10-220", 0.1, 10, 0.1)
+
+    elif default == ['StainOrGaussian'] : 
+        prob = uniform(0,1)
+        if prob < float(args['1_p_0']) :
+            img_modified = add_stain(img, "1-12", "10-220", 0.1, 0.15)
+        else : 
+            img_modified = add_gaussian(img, 0.1)
+    elif default == 'StainOrGaussian' : 
+        prob = uniform(0,1)
+        if prob < float(args['stain']) :
+            img_modified = add_stain(img, "1-12", "10-220", 0.1, 0.15)
+        else : 
+            img_modified = add_gaussian(img, 0.1)
+
+    else : 
+        img_modified = img
+    return img_modified
 
 """ -----------------------------------------------------------------------------------------
 Corrupts an array of images with some type of noise
@@ -19,35 +87,9 @@ OUTPUT:
     - temp: corrupted array of images
 ----------------------------------------------------------------------------------------- """ 
 def corrupt(im_array, args):
-    default = args['1_default']
-
     temp = np.copy(im_array)
     for idx,img in enumerate(np.copy(im_array)):
-        if default == ['Gaussian']:
-            img_modified = add_gaussian(img, float(args['1_p_0']))
-        elif default == ['Stain']:
-            img_modified = add_stain(img, args['1_p_0'], args['1_p_1'], float(args['1_p_2']), float(args['1_p_3']))
-        elif default == ['Scratch']: 
-            img_modified = add_scratch(img, args['1_p_0'])
-        elif default == ['Drops']:
-            img_modified = add_drops(img, args['1_p_0'], args['1_p_1'], float(args['1_p_2']), int(args['1_p_3']), float(args['1_p_3']))
-        elif default == ['Structural']: 
-            prob = uniform(0,1)
-            if prob < float(args['1_p_0']) :
-                img_modified = add_stain(img, "1-12", "10-220", 0.1, 0.15)
-            elif prob >= float(args['1_p_0']) and prob <= ( float(args['1_p_0']) + float(args['1_p_1'])): 
-                img_modified = add_scratch(img,"10-220")
-            else : 
-                img_modified = add_drops(img, "1-2", "10-220", 0.1, 10, 0.1)
-        elif default == ['StainOrGaussian']: 
-            prob = uniform(0,1)
-            if prob < float(args['1_p_0']) :
-                img_modified = add_stain(img, "1-12", "10-220", 0.1, 0.15)
-            else : 
-                img_modified = add_gaussian(img, 0.1)
-        else : 
-            img_modified = img
-        temp[idx] = img_modified
+        temp[idx] = corrupt_image(img, args)
     return temp
 
 
@@ -61,35 +103,9 @@ OUTPUT:
 ----------------------------------------------------------------------------------------- """ 
 def corrupt_dataset(im_array, path):
     params  = read_json(path)
-    default = params['1_default']
-
     temp = np.copy(im_array)
     for idx,img in enumerate(np.copy(im_array)):
-        if default == 'Gaussian':
-            img_modified = add_gaussian(img, float(params['std']))
-        elif default == 'Stain':
-            img_modified = add_stain(img, params['size'], params['color'], float(params['irregularity']), float(params['blur']))
-        elif default == 'Scratch': 
-            img_modified = add_scratch(img, params['color'])
-        elif default == 'Drops':
-            img_modified = add_drops(img, params['size'], params['color'], float(params['irregularity']), int(params['number']), float(params['spacing']))
-        elif default == 'Structural': 
-            prob = uniform(0,1)
-            if prob < 0.6 :
-                img_modified = add_stain(img, "1-12", "10-220", 0.1, 0.15)
-            elif prob >= 0.6 and prob <= 0.8: 
-                img_modified = add_scratch(img,"10-220")
-            else : 
-                img_modified = add_drops(img, "1-2", "10-220", 0.1, 10, 0.1)
-        elif default == 'StainOrGaussian': 
-            prob = uniform(0,1)
-            if prob < 0.6 :
-                img_modified = add_stain(img, "1-12", "10-220", 0.1, 0.15)
-            else : 
-                img_modified = add_gaussian(img, 0.1)
-        else : 
-            img_modified = img
-        temp[idx] = img_modified
+        temp[idx] = corrupt_image(img, params)
     return temp
 
 """ -----------------------------------------------------------------------------------------
@@ -104,6 +120,7 @@ OUTPUT:
     - corrupted image
 ----------------------------------------------------------------------------------------- """ 
 def add_stain(img, size, color, irregularity, blur):
+
     if '-' not in color: 
         color = int(color)
     else: 
@@ -128,7 +145,10 @@ def add_stain(img, size, color, irregularity, blur):
     if blur != 0 : 
         mask = gaussian_filter(mask, max(a,b)*blur)
 
-    rgb_mask     = np.dstack([mask]*3)
+    if img.shape[-1] == 1: 
+        rgb_mask     = np.dstack([mask])
+    else:
+        rgb_mask     = np.dstack([mask]*3)
     not_modified = np.subtract(np.ones(img.shape), rgb_mask)
     stain        = 255*random_noise(np.zeros(img.shape), mode='gaussian', mean = color/255., var = 0.05/255.)
     result       = np.add( np.multiply(img,not_modified), np.multiply(stain,rgb_mask) ) 
@@ -209,8 +229,11 @@ def add_drops(img, size, color, irregularity, nb, spacing):
                 new_x.append(xx)
                 new_y.append(yy)
         mask[new_y,new_x] = 1
-
-    rgb_mask     = np.dstack([mask]*3)
+        
+    if img.shape[-1] == 1: 
+        rgb_mask     = np.dstack([mask])
+    else:
+        rgb_mask     = np.dstack([mask]*3)
     not_modified = np.subtract(np.ones(img.shape), rgb_mask)
     stain        = 255*random_noise(np.zeros(img.shape), mode='gaussian', mean = color/255., var = 0.05/255.)
     result       = np.add( np.multiply(img,not_modified), np.multiply(stain,rgb_mask) ) 
@@ -227,8 +250,9 @@ OUTPUT:
     - corrupted image
 ----------------------------------------------------------------------------------------- """ 
 def add_gaussian(img, sigma):
-    img = random_noise(img, mode='gaussian', mean = 0, var = sigma)
-    return (img*255).astype(np.uint8)
+    noise  = 255*random_noise(img, mode='gaussian', mean = 0, var = sigma)
+    result = np.add(img,noise)
+    return result.astype(np.uint8)
 
 """ -----------------------------------------------------------------------------------------
 Add a scratch (on mean intensity) on the image -> a line, a sine wave or a square root 

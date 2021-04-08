@@ -1,5 +1,5 @@
 from utils.import_lib import *
-from utils.launch_code import import_new_db, corrupt_db, train_net, evaluate_net, live
+from utils.launch_code import import_new_db, corrupt_db, train_net, evaluate_net
 
 """ COLLIN Anne-Sophie """ 
 
@@ -17,10 +17,11 @@ parser.add_argument('-keep', action='store_true')
 parser.add_argument('--todo', type=str)
 
 def main(args):
-
+    if not os.path.exists(data_path):
+        os.makedirs(data_path)
     if not os.path.exists(code_path + '/Todo_list'):
         os.makedirs(code_path + '/Todo_list')
-    
+
     if args.gui1:
         from GUI.GUI1 import launch_dialog_box
         launch_dialog_box(all_p[0])
@@ -36,9 +37,7 @@ def main(args):
         lst = os.listdir(todo_path)
         lst.sort(key = lambda x : x)
         for file in lst:  
-            if args.live: 
-                live(read_json(todo_path + '/' + file))
-            elif 'IMPORT_DB' in file: 
+            if 'IMPORT_DB' in file: 
                 import_new_db(read_json(todo_path + '/' + file))
             elif 'CORRUPT_DB' in file: 
                 corrupt_db(read_json(todo_path + '/' + file), all_p[0])

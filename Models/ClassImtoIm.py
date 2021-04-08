@@ -3,11 +3,10 @@ from utils.helper import *
 from utils.make_graph import *
 from utils.instantiate_net import *
 
+import tensorflow as tf
+
 from random import randint
 import importlib
-from keras import backend as K
-K.clear_session()
-from keras.layers import Input
 from Models.SuperClass import Network_Class
 from utils.patch import patchify, depatchify
 from utils.ROC import compute_ROC, compute_combinedROC, compute_2DcombinedROC
@@ -16,7 +15,7 @@ from copy import deepcopy
 from skimage.color import rgb2gray
 
 import matplotlib
-
+#matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 plt.rc('xtick', labelsize=16) 
 plt.rc('ytick', labelsize=16) 
@@ -48,7 +47,7 @@ class ImtoIm(Network_Class):
             shape = (self.row, self.col, channels)
         else:
             shape = (int(self.Patch.split('x')[0]), int(self.Patch.split('x')[1]), channels)
-        init = Input(shape=shape)
+        init = tf.keras.Input(shape=shape)
 
         # Create the network 
         net_module  = importlib.import_module('Models.Networks.' + args['3_model_arch'].split('_')[0])
@@ -109,14 +108,18 @@ class ImtoIm(Network_Class):
             if self.Grayscale: 
                 input_imgs = rgb2gray(input_imgs)
                 input_imgs = np.reshape(input_imgs *255, (len(input_imgs ), self.row, self.col, 1))
-            mean_pred, var_pred = np.zeros(input_imgs.shape, dtype='uint8'), np.zeros(input_imgs.shape)
+            mean_pred, var_pred = np.zeros(input_imgs.shape, dtype='uint8'), np.zeros((len(input_imgs), self.row, self.col, 1))
             for i, input_im in enumerate(input_imgs): 
                 these_pred = np.zeros((n_pred, input_im.shape[0], input_im.shape[1], 1 if self.Grayscale else 3), dtype='uint8')
                 for j in range(n_pred):
                     these_pred[j] = new_net.make_prediction(input_im)
-         
+
                 mean_pred[i] = np.mean(these_pred, axis=0)
-                var_pred[i]  = np.var(these_pred, axis=0)
+                if self.Grayscale:
+                    var_pred[i]  = np.var(these_pred, axis=0)
+                else : 
+                    temp = np.mean(np.var(these_pred, axis=0), axis=-1)
+                    var_pred[i] = np.reshape(temp, (self.row, self.col, 1))
 
             result_path           = root_path + '/Results_MCDropout/' + new_net.exp_name + '/' + this_subset + '_prediction/'
             all_pred[this_subset] = None
@@ -158,8 +161,3 @@ class ImtoIm(Network_Class):
             var_pred[i]  = np.var(these_pred, axis=0)
         return mean_pred, var_pred
 
-
-
-        
-
-        

@@ -1,7 +1,7 @@
 {
     Data_augmentation_offline:
     {
-        Grayscale: false
+        Grayscale: true
         Histogram_Equalization: false
         Illumination_Changes: false
         Rotation_Translation: false

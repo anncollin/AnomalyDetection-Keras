@@ -5,7 +5,6 @@ from utils.instantiate_net import *
 
 from shutil import copyfile
 import importlib
-from keras import backend as K
 from datasets.add_corruption import corrupt
 
 
@@ -18,7 +17,6 @@ def import_new_db(args):
     ds_name = args["0_ds_name"]
 
     # Create Empty folders 
-    """
     ds_path = data_path + '/' + ds_name
     if not os.path.exists(ds_path):
         os.makedirs(ds_path)
@@ -27,64 +25,46 @@ def import_new_db(args):
         os.makedirs(ds_path + '/Test/Clean')
     else: 
         raise ValueError('The %s database already exists' % (ds_name))
-    """
+    
 
-    def copy_folder(from_folder, to_folder, mask=False): 
+    def copy_folder(from_folder, to_folder, maskPath=''): 
+        # Copy images 
         lst   = sorted(os.listdir(from_folder))
-        
-        if mask : 
-            masks = [x for x in os.listdir(to_folder) if 'mask' in x]
-            shift = len(masks)
-        else : 
-            ims = [x for x in os.listdir(to_folder) if 'mask' not in x]
-            shift = len(ims)
+        ims   = [x for x in os.listdir(to_folder) if 'mask' not in x]
+        shift = len(ims)
         for idx, img_path in enumerate(lst):
-            if mask : 
-                copyfile(from_folder + '/' + img_path, to_folder + 'mask_' + str(shift+idx) + '.png')
-            else : 
-                copyfile(from_folder + '/' + img_path, to_folder + str(shift+idx) + '.png')
+            copyfile(from_folder + '/' + img_path, to_folder + str(shift+idx) + '.png')
+        
+        # Copy masks if any 
+        if maskPath is not '' : 
+            lstMasks   = sorted(os.listdir(maskPath))
+            masks      = [x for x in os.listdir(to_folder) if 'mask' in x]
+            shift = len(masks)
+            for idx, img_path in enumerate(lstMasks):
+                copyfile(maskPath + '/' + img_path, to_folder + 'mask_' + str(shift+idx) + '.png')
  
-    """
     # Copy train images
     train_path = args['0_train_set']
-    copy_folder(train_path, ds_path + '/Train/Clean/', {"1_default":None})
+    copy_folder(train_path, ds_path + '/Train/Clean/')
+    write_json({"1_default": None }, ds_path + '/Train/Clean/00_description.json')
 
     # Copy test images
     test_clean_path = args['0_test_clean']
-    copy_folder(test_clean_path, ds_path + '/Test/Clean/', {"1_default":None})
+    copy_folder(test_clean_path, ds_path + '/Test/Clean/')
+    write_json({"1_default": None }, ds_path + '/Test/Clean/00_description.json')
 
-    all_def_folders = [x for x in args if '0_test_defaul' in x]
+    all_def_folders  = [x for x in args if '0_test_defaul' in x]
+    all_mask_folders = [x for x in args if '0_test_mask' in x]
+
     description = {}
     shift = 0
-    for this_def in all_def_folders: 
+    for this_def, this_mask in zip(all_def_folders, all_mask_folders): 
         if args[this_def] is not '': 
-            copy_folder(args[this_def], ds_path + '/Test/Real_corruption/')
+            copy_folder(args[this_def], ds_path + '/Test/Real_corruption/', args[this_mask])
             for i in range( len(os.listdir(args[this_def])) ): 
                 description[str(shift+i) + '.png'] = args['0_test_label'+this_def[-1]]
             shift += (i+1)
     write_json(description, ds_path + '/Test/Real_corruption/00_description.json')
-    
-    # Copy masks 
-    # all_def_folders = [x for x in args if '0_test_defaul' in x] # Change path
-    #for this_def in all_def_folders: 
-    #    if args[this_def] is not '': 
-    #        copy_folder(args[this_def], ds_path + '/Test/Real_corruption/mask_')
-    """
-    print(data_path)
-    description = {}
-    ori_ds, new_ds = 'pill', 'Pill'
-    ds_path = '/home/anncollin/Desktop/ADRIC/datasets/MVTec/' + ori_ds
-    corr = os.listdir(ds_path + '/ground_truth/')
-    shift = 0
-    for x in sorted(corr): 
-        print(ds_path + '/ground_truth/' + x)
-        copy_folder(ds_path + '/test/' + x, data_path + '/' +  new_ds + '/Test/Real_corruption/', mask = False)
-        copy_folder(ds_path + '/ground_truth/' + x, data_path + '/' +  new_ds + '/Test/Real_corruption/', mask = True)
-        for i in range( len(os.listdir(ds_path + '/ground_truth/' + x)) ): 
-            description[str(shift+i) + '.png'] = x
-        shift += (i+1)
-    write_json(description, data_path + '/' +  new_ds + '/Test/Real_corruption//00_description.json', sort_keys=False)
-
      
 """ -----------------------------------------------------------------------------------------
 CORRUPT AN EXISTING DATABASE
@@ -161,11 +141,9 @@ def train_net(args):
         print(colored('The network is trained.', 'red'))
         my_net.print_learning_curves()
         print('curves printed')
-        
         my_net.load_weights(my_net.exp_name)
-        my_net.evaluate(my_dataset)
+        my_net.evaluate(my_dataset, print_pred=True, image_wise=True, pixel_wise=True)
   
-
     for this_dataset in args['3_ds']: 
         for this_architecture in args['3_model_arch']:
             for this_training in args['3_train']: 
@@ -181,14 +159,6 @@ def train_net(args):
 
 
 """ -----------------------------------------------------------------------------------------
-LIVE DEMO
------------------------------------------------------------------------------------------ """
-def live(args): 
-    my_dataset, my_net = instantiate_net2(args, args['3_ds'][0])
-    my_net.load_weights(my_net.exp_name)
-    my_net.live_demo()
-
-""" -----------------------------------------------------------------------------------------
 EVALUATE A NETWORK
 ----------------------------------------------------------------------------------------- """
 
@@ -198,7 +168,7 @@ def evaluate_net(args):
             this_args = read_json(root_path + '/Experiments/' + this_exp + '/00_description.json')
             my_dataset, my_net = instantiate_net(this_args)
             my_net.load_weights(this_exp)
-            my_net.evaluate(my_dataset, print_pred=args['4_ROC_printpred'], pixel_wise = args['4_ROC_pixel'])
+            my_net.evaluate(my_dataset, print_pred=args['4_ROC_printpred'], image_wise = args['4_ROC'], pixel_wise = args['4_ROC_pixel'])
 
     if args['4_MCdrop'] or args['4_MCdrop_pixel']: 
         for this_exp in args['4_exp']:
@@ -206,24 +176,8 @@ def evaluate_net(args):
             this_args['4_MCdrop'] = True
             _, my_net = instantiate_net(this_args)
             my_net.load_weights(this_exp)
-            my_net.evaluate_MCDropout(this_args, print_pred=args['4_MCdrop_printpred'], pixel_wise = args['4_MCdrop_pixel'])
+            my_net.evaluate_MCDropout(this_args, print_pred=args['4_MCdrop_printpred'], image_wise = args['4_MCdrop'], pixel_wise = args['4_MCdrop_pixel'])
 
-    if args['4_combinedMC']: 
-        for this_exp in args['4_exp']:
-            this_args = read_json(root_path + '/Experiments/' + this_exp + '/00_description.json')
-            this_args['4_MCdrop'] = True
-            _, my_net = instantiate_net(this_args)
-            my_net.load_weights(this_exp)
-            my_net.evaluate_combinedROC(this_args)
-
-    if args['4_OOD']: 
-        for this_exp in args['4_exp']:
-            this_args = read_json(root_path + '/Experiments/' + this_exp + '/00_description.json')
-            dataset, my_net = instantiate_net(this_args)
-            my_net.OOD(dataset)
-
-
-    
 
 
 

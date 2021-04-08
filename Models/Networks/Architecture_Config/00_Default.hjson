@@ -1,0 +1,8 @@
+{
+    Activation_fonction: LeakyReLu
+    Depth: 5
+    Dropout_rate: 0
+    Filter_size: 3
+    Nb_feature_maps: 16
+    Patch: ""
+}

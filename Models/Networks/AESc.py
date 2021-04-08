@@ -1,11 +1,9 @@
 from utils.import_lib import *
 from importlib import import_module
 
-from keras.models import Model
-from keras.layers import Activation, Add, BatchNormalization, Concatenate, Conv2D, Cropping2D, Dropout, Input, Lambda, LeakyReLU, ReLU, Subtract, UpSampling2D
-import keras.optimizers as optimizers
-from keras import backend as K
 import tensorflow as tf
+from tensorflow.keras.layers import Activation, Add, BatchNormalization, Concatenate, Conv2D, Cropping2D, Dropout, Input, Lambda, LeakyReLU, ReLU, Subtract, UpSampling2D
+
 import numpy as np
 import math
 from Models.Losses import *
@@ -22,7 +20,7 @@ Constructor for a Convolutional Auto-encoders with Symmetric Skip Connections
 
 def build_model(net, init):
     def resize_layer(conv, deconv): 
-        if K.image_data_format() == "th": #Channel first 
+        if tf.keras.backend.image_data_format() == "channels_first":
             if deconv.get_shape().as_list()[2] > conv.get_shape().as_list()[2]:
                 deconv = Cropping2D(cropping=((0, 1), (0, 0)))(deconv)
             if deconv.get_shape().as_list()[3] > conv.get_shape().as_list()[3]:
@@ -33,6 +31,7 @@ def build_model(net, init):
             if deconv.get_shape().as_list()[2] > conv.get_shape().as_list()[2]:
                 deconv = Cropping2D(cropping=((0, 0), (0, 1)))(deconv)
         return deconv
+
 
     def get_name(type, prev_layer=None): 
         if 'CONV' in  type : 
@@ -54,7 +53,7 @@ def build_model(net, init):
             name=get_name('strided_CONV', init if idx==0 else conv_layers[idx-1]))(init if idx==0 else conv_layers[idx-1])
         conv_layers[idx] = BatchNormalization(name=get_name('BN'))(conv_layers[idx])
         conv_layers[idx] = LeakyReLU(name=get_name('LeakyReLU'))(conv_layers[idx])
-        conv_layers[idx] = Dropout(net.Dropout_rate, seed=2019)(conv_layers[idx])
+        conv_layers[idx] = Dropout(net.Dropout_rate, name=get_name('Dropout'), seed=2019)(conv_layers[idx])
         if net.MCDropout:
             conv_layers[idx] = Dropout(drop[idx], name=get_name('MCDropout_encoder'))(conv_layers[idx], training=True)
 
@@ -67,7 +66,7 @@ def build_model(net, init):
             deconv_layers[idx] = UpSampling2D(name=get_name('UpSampling'))(conv_layers[-1])
         else: 
             deconv_layers[idx] = Conv2D(net.Nb_feature_maps*(2**(net.Depth-1-idx)), (net.Filter_size, net.Filter_size), padding='same', 
-                name=get_name('deCONV', deconv_layers[idx-1]))(conv_layers[-1] if idx==0 else deconv_layers[idx-1])
+                name=get_name('deCONV', deconv_layers[idx-1]))(deconv_layers[idx-1])
             deconv_layers[idx] = BatchNormalization(name=get_name('BN'))(deconv_layers[idx])  
             deconv_layers[idx] = LeakyReLU(name=get_name('LeakyReLU'))(deconv_layers[idx])
             deconv_layers[idx] = resize_layer(conv_layers[net.Depth-1-idx], deconv_layers[idx])
@@ -77,12 +76,12 @@ def build_model(net, init):
 
             deconv_layers[idx] = Add()([conv_layers[net.Depth-1-idx], deconv_layers[idx]])
             deconv_layers[idx] = UpSampling2D(name=get_name('UpSampling'))(deconv_layers[idx])
-            deconv_layers[idx] = Dropout(net.Dropout_rate, seed=2019)(deconv_layers[idx])
+            deconv_layers[idx] = Dropout(net.Dropout_rate, name=get_name('Dropout'), seed=2019)(deconv_layers[idx])
             
     
     out = Conv2D(1 if net.Grayscale else 3, (net.Filter_size, net.Filter_size), padding='same', activation='sigmoid', name=get_name('OUT', None))(deconv_layers[-1])
     out = resize_layer(init, out)
-    model = Model(init, out)
+    model = tf.keras.Model(init, out)
 
     module = import_module('Models.Losses')
     loss_fct = getattr(module, net.Loss)
@@ -90,4 +89,5 @@ def build_model(net, init):
     #model.summary()
 
     return model
+
 

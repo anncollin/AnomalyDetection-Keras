@@ -5,7 +5,7 @@
         Histogram_Equalization: false
         Illumination_Changes: false
         Rotation_Translation: false
-        Offline_Corruption: false
+        Offline_Corruption: true
     }
     Data_augmentation_online:
     {
@@ -18,12 +18,16 @@
     }
     Learning:
     {
-        Batch_size: 16
-        Callback:  "ReduceonPlateau"
-        Epoch: 250
-        Learning_rate: 0.01
+        Batch_size: 8
+        Callback: ""  #ReduceonPlateau
+        Epoch: 50
+        Learning_rate: 0.005
         Loss: MSE
         Optimizer: Adam
         Save_weights_each_epoch: false
+    }
+    Evaluation:
+    {
+        MCDropout: false
     }
 }

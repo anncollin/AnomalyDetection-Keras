@@ -174,6 +174,8 @@ def print_learning_curves(h5_path, row, col):
     # summarize history for PSNR
     plt.plot(range(1,nb_epoch), history['PSNRLoss'], color=colors['train'], linewidth=1, label='training set')
     plt.plot(range(1,nb_epoch), history['val_PSNRLoss'], color=colors['val'], linewidth=1, label='validation set')
+    #plt.plot(range(1,nb_epoch), history['loss'], color=colors['train'], linewidth=2, label='training set')
+    #plt.plot(range(1,nb_epoch), history['val_loss'], color=colors['val'], linewidth=2, label='validation set')
     plt.ylabel('PSNR')
     plt.xlabel('epoch')
     plt.legend(loc='lower right')

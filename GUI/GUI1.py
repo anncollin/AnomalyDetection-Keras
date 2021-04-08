@@ -68,15 +68,18 @@ def launch_dialog_box(def_p):
     frame1.append([sg.Text('Dataset name', size=(15, 1)), sg.InputText('', key='0_ds_name', do_not_clear=True, focus=True, size=(col, 1)), sg.Text('', size=(18,1)),
         sg.Frame('Training Set', subframe11, title_color='#0f2851', font=("Arial Bold", 11))]) 
     frame1.append([sg.Text('')])
-
+    
     subframe12 = [[sg.Text('Clean Images', size=(col, 1))]]
     subframe12.append([sg.Input(key='0_test_clean', do_not_clear=True, focus=True), sg.FolderBrowse()])
-    subframe12.append([sg.Text('Images with Defatuls', size=(3*col+9, 1)), sg.Text('Labels', size=(col, 1))])
+    subframe12.append([sg.Text('Images with Defects', size=(3*col+9, 1)), 
+                        sg.Text('Label to identify the defect category', size=(2*col+5, 1)), 
+                        sg.Text('Binary mask to segment defects (Optional)', size=(2*col+5, 1)) ])
     for idx in range(9):
         subframe12.append([sg.Text('Type '+str(idx+1), size=(col, 1))])
         subframe12.append([sg.Input(key='0_test_default'+str(idx), change_submits=True, do_not_clear=True, focus=True), sg.FolderBrowse(), 
-            sg.Text('', size=(col2, 1)), sg.Input(key='0_test_label'+str(idx), do_not_clear=True, focus=True)])
-    frame1.append([sg.Frame('Test Set', subframe12, title_color='#0f2851', font=("Arial Bold", 11))])    
+            sg.Text('', size=(col2, 1)), sg.Input(key='0_test_label'+str(idx), do_not_clear=True, focus=True), 
+            sg.Input(key='0_test_mask'+str(idx), change_submits=True, do_not_clear=True, focus=True), sg.FolderBrowse()])
+    frame1.append([sg.Frame('Test Set', subframe12, title_color='#0f2851', font=("Arial Bold", 11))]) 
 
     # CORRUPT AN EXISTING DATABASE
     f2_db = [[sg.Text('Select the Database', text_color='#0f2851', font=("Arial Bold", 11))]]
@@ -102,11 +105,11 @@ def launch_dialog_box(def_p):
     f3_ds01 = [[sg.Text('Query', size=(8, 1)), sg.InputText('', key='3_ds_query', change_submits=True, do_not_clear=True, focus=True)]]
     f3_ds01.append([sg.Listbox(values=all_ds, key='3_ds', size=(40,15), select_mode='multiple', bind_return_key=True)])
     f3_ds01.append([sg.Text('')])
-    f3_ds01.append([sg.Text('Resolution (1st axis)', size=(20, 1)), sg.InputText('', key='3_dimension', size=(10, 1), change_submits=True, do_not_clear=True, focus=True)])
+    f3_ds01.append([sg.Text('Resolution (1st axis)', size=(23, 1)), sg.InputText('', key='3_dimension', size=(10, 1), change_submits=True, do_not_clear=True, focus=True)])
     f3_ds = [[sg.Frame('Select the Dataset(s)', f3_ds01, title_color='#0f2851', font=("Arial Bold", 11))]]
 
     # Select Model Class and Architecture
-    f3_model01 = [[sg.Text('Select the Model Class', text_color='#0f2851', font=("Arial Bold", 11))]]
+    f3_model01 = [[sg.Text('Select the Model Class (choose ImToIm by default)', text_color='#0f2851', font=("Arial Bold", 11))]]
     f3_model01.append([sg.Combo(values=list(model_classes), key='3_model_class', size=(50,5), change_submits=True)])
     f3_model01.append([sg.Text('Select the Model Architecture', text_color='#0f2851', font=("Arial Bold", 11))])
     f3_model01.append([sg.Text('Query', size=(8, 1)), sg.InputText('', key='3_model_query', change_submits=True, do_not_clear=True, focus=True)])
@@ -149,12 +152,7 @@ def launch_dialog_box(def_p):
     sub_frame42.append([sg.Checkbox('Perform MCdropout evaluation (Pixel-wise)', key='4_MCdrop_pixel')])
     sub_frame42.append([sg.Text('_________________________________________________________')])
     sub_frame42.append([sg.Checkbox('Print Prediction', key='4_MCdrop_printpred')])
-    sub_frame42.append([sg.Checkbox('Perform COMBINED MCdropout evaluation', key='4_combinedMC')])
     frame4.append([sg.Frame('Monte Carlo Dropout', sub_frame42, title_color='#0f2851', font=("Arial Bold", 11))])
-
-    sub_frame43 = [[sg.Text('OOD')]]
-    sub_frame43.append([sg.Checkbox('Perform OOD evaluation', key='4_OOD')])
-    frame4.append([sg.Frame('Out-of-Distribution Sample Detection', sub_frame43, title_color='#0f2851', font=("Arial Bold", 11))])
 
 
     # GENERAL LAYOUT

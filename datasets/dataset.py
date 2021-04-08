@@ -1,8 +1,10 @@
 from utils.import_lib import *
 from utils.helper import *
 
-from skimage.color import rgb2grey
+from skimage.color import rgb2gray
 
+
+""" COLLIN Anne-Sophie """ 
 
 """ -----------------------------------------------------------------------------------------
 DATASET CLASS
@@ -74,25 +76,29 @@ class Dataset():
                 self.test_label.append(0)
                 self.test_label_name.append('clean')
                 if self.mask is None : 
-                    self.mask = np.zeros(rgb2grey(image).shape) 
+                    self.mask = np.zeros(rgb2gray(image).shape) 
                 else :
-                    self.mask = np.vstack(( self.mask, np.zeros(rgb2grey(image).shape)  ))
+                    self.mask = np.vstack(( self.mask, np.zeros(rgb2gray(image).shape)  ))
 
             elif subfolder == 'Real_corruption':
                 self.test_label.append(2)
                 self.test_label_name.append(labels[img_path])
-                mask = np.array([read_png(test_path + '/mask_' + img_path, rescale_factor)])/255.  
+                try: 
+                    mask = np.array([read_png(test_path + '/mask_' + img_path, rescale_factor)])/255.  
+                except: 
+                    mask = np.zeros(image.shape) 
+
                 if self.mask is None : 
-                    self.mask = rgb2grey(mask)
+                    self.mask = rgb2gray(mask)
                 else :
-                    self.mask = np.vstack(( self.mask, rgb2grey(mask) ))
+                    self.mask = np.vstack(( self.mask, rgb2gray(mask) ))
             else : 
                 self.test_label.append(1)
                 self.test_label_name.append(subfolder) 
                 if self.mask is None : 
-                    self.mask = np.zeros(rgb2grey(image).shape) 
+                    self.mask = np.zeros(rgb2gray(image).shape) 
                 else :
-                    self.mask = np.vstack(( self.mask, np.zeros(rgb2grey(image).shape)  ))
+                    self.mask = np.vstack(( self.mask, np.zeros(rgb2gray(image).shape)  ))
         
         self.img_row, self.img_col = self.test.shape[1], self.test.shape[2]
         

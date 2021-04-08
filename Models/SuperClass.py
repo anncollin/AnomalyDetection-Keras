@@ -4,39 +4,22 @@ from utils.make_graph import *
 from utils.instantiate_net import *
 import shutil
 
-from keras.backend.tensorflow_backend import set_session
 import tensorflow as tf
+import tensorflow.keras.callbacks as callbacks
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
-config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
-sess = tf.Session(config=config)
-set_session(sess)
-
-
-from keras.models import Model
-from keras.layers import Input, multiply
-from keras.layers.core import Lambda
-import keras.callbacks as callbacks
-import keras.optimizers as optimizers
-from keras.preprocessing.image import ImageDataGenerator
-from keras import backend as K
-K.clear_session()
-from keras import layers
-from keras import initializers
-import tensorflow as tf
 import numpy as np
 import math
 import hjson
 from utils.patch import patchify, depatchify
 from utils.ROC import compute_ROC, compute_ROC_pixel_wise
-from datasets.add_corruption import corrupt_dataset
+from datasets.add_corruption import corrupt_dataset, corrupt_image
 from utils.callbacks import HistoryCheckpoint
 
 from sklearn.feature_extraction import image
 import pickle
 
 import matplotlib
-#matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 plt.rc('xtick', labelsize=16) 
 plt.rc('ytick', labelsize=16) 
@@ -119,7 +102,7 @@ class Network_Class:
     # ---------------------------------------------------------------------------------------
     def augment_data(self, dataset): 
 
-        print('start data augmentation')
+        print('start offline data augmentation')
         overwrite = True 
         # Pure "classical" Data Augmentation 
         if self.Rotation_Translation : 
@@ -145,7 +128,7 @@ class Network_Class:
                     overwrite = False
 
         # Homemade Corruption
-        if 'Clean' not in dataset.ds_name:
+        if 'Clean' not in dataset.ds_name and self.Offline_Corruption:
             new_train_set, new_GT = None, None
             GT_images             = np.copy(dataset.train)
             for _ in range(5):
@@ -175,12 +158,13 @@ class Network_Class:
             drop_array(dataset.train, self.tmp + '/Train/Imgs', overwrite=overwrite)
             drop_array(dataset.train, self.tmp + '/Train_GT/Imgs', overwrite=overwrite)
         
-        print('end data augmentation')
+        print('end offline data augmentation')
 
     # ---------------------------------------------------------------------------------------
     # Training procedure of the network
     # ---------------------------------------------------------------------------------------
     def fit(self, args, dataset):
+
         # Prepare saving results
         write_json(args, root_path + '/Experiments/' + self.exp_name + '/00_description.json' )
         weights_path   = root_path + '/Experiments/' + self.exp_name + '/weights.h5' 
@@ -217,34 +201,56 @@ class Network_Class:
         callback_list.append(HistoryCheckpoint(history_path))
 
         # Training procedure
-        seed = 2016
-        generator_x = ImageDataGenerator(rescale=1.0/255.0, validation_split=0.2)
-        generator_y = ImageDataGenerator(rescale=1.0/255.0, validation_split=0.2)
-
-        datagen_args = dict(batch_size=self.Batch_size,
+        seed = 2042
+ 
+        datagen_args = dict(rescale=1.0/255.0, 
+                            validation_split=0.2, 
+                            rotation_range=self.Rotation,
+                            width_shift_range=self.Width_shift,
+                            height_shift_range=self.Height_shift,
+                            horizontal_flip=self.Horizontal_flip,
+                            vertical_flip=self.Vertical_flip,
+                            zoom_range=self.Zoom,
+                            fill_mode="nearest")
+        
+        if 'Clean' in dataset.ds_name or self.Offline_Corruption:
+            generator_x = ImageDataGenerator(**datagen_args)
+        else: 
+            corruption_args = read_json(data_path + '/' + dataset.ds_name.split('_')[0] + '/Train/' + dataset.ds_name.split('_')[1] + '/00_description.json')
+            def my_corruption(image): 
+                st0 = np.random.get_state()
+                result =  corrupt_image(image, corruption_args).astype('float32')
+                np.random.set_state(st0)
+                return result
+            generator_x = ImageDataGenerator(preprocessing_function=my_corruption, **datagen_args)
+        generator_y = ImageDataGenerator(**datagen_args)
+        
+        
+        dataflow_args = dict(batch_size=self.Batch_size,
                             class_mode=None,
                             target_size=(self.row,self.col),
                             color_mode='grayscale' if self.Grayscale else 'rgb', 
                             shuffle=True,
-                            seed=seed)
+                            seed=seed
+                            )
 
-        train_input = generator_x.flow_from_directory(self.tmp + '/Train', subset='training', **datagen_args)
-        train_masks = generator_y.flow_from_directory(self.tmp + '/Train_GT', subset='training',**datagen_args)
-        val_input   = generator_x.flow_from_directory(self.tmp + '/Train', subset='validation', **datagen_args)
-        val_masks   = generator_y.flow_from_directory(self.tmp + '/Train_GT', subset='validation',**datagen_args)
+        train_input = generator_x.flow_from_directory(self.tmp + '/Train', subset='training', **dataflow_args)
+        train_masks = generator_y.flow_from_directory(self.tmp + '/Train_GT', subset='training',**dataflow_args)
+        val_input   = generator_x.flow_from_directory(self.tmp + '/Train', subset='validation', **dataflow_args)
+        val_masks   = generator_y.flow_from_directory(self.tmp + '/Train_GT', subset='validation', **dataflow_args)
 
         train_generator = zip(train_input, train_masks)
         val_generator   = zip(val_input, val_masks)
 
         self.model.fit_generator(generator=train_generator,
                 epochs = self.Epoch,
-                steps_per_epoch = len(train_input), 
+                steps_per_epoch = int(2000/self.Batch_size),
                 validation_data=val_generator,
-                validation_steps = len(val_input), 
+                validation_steps = int(500/self.Batch_size), 
                 callbacks=callback_list,
                 verbose=1, 
                 #use_multiprocessing=True,
-                #workers=2
+                #workers=4
                 )
 
         shutil.rmtree(self.tmp, ignore_errors=True)
@@ -309,7 +315,7 @@ class Network_Class:
     # ---------------------------------------------------------------------------------------
     # Perform network evaluation and compute ROC curve if ROC is True
     # ---------------------------------------------------------------------------------------
-    def evaluate(self, dataset, print_pred=True, pixel_wise = False, ROC=True, norms=['l0', 'l1', 'l2', 'linf']): 
+    def evaluate(self, dataset, print_pred=True, image_wise = False, pixel_wise = False, ROC=True, norms=['l0', 'l1', 'l2', 'linf']): 
         # Compute the predictions
         used     = set()
         subsets  = [x for x in dataset.test_label_name if x not in used and (used.add(x) or True)]
@@ -324,7 +330,6 @@ class Network_Class:
             all_inputs = rgb2gray(dataset.test)
             all_inputs = np.reshape(all_inputs*255, (len(all_inputs), self.row, self.col, 1))
         all_preds  = self.make_prediction(np.copy(all_inputs))
-
         print('-------end Inference---------')
 
         for this_subset in subsets: 
@@ -348,21 +353,18 @@ class Network_Class:
             binary_test_labels = np.concatenate(( dataset.test_label[dataset.test_label_name=='clean'], dataset.test_label[dataset.test_label_name==this_subset]))
             binary_test_labels[binary_test_labels ==2] = 1
 
-            if not pixel_wise: 
+            if image_wise: 
                 all_TP, all_FP = compute_ROC(x, y, binary_test_labels)
-        
                 result_path = root_path + '/Results/' + self.exp_name + '/ROC_clean_vs_' + this_subset 
                 write_json({'all_TP': all_TP, 'all_FP': all_FP}, result_path + '.json') 
                 print_ROC(result_path + '.json', result_path + '.png', AUC=True)
-            else : 
-                print('------', this_subset)
+            if pixel_wise: 
                 TP, FP = compute_ROC_pixel_wise(x, y, masks)
-
                 result_path = root_path + '/Results/' + self.exp_name + '/PIXELWISE_ROC_clean_vs_' + this_subset 
                 write_json({'TP': TP, 'FP': FP}, result_path + '.json') 
                 print_PIXEL_WISE_ROC(result_path + '.json', result_path + '.png', AUC=True)
         
-        # Compute combined ROC curve
+        # Compute combined ROC curve (all defects categories vs. clean)
         x = np.concatenate( (all_pred['clean']['input'], all_inputs[dataset.test_label==2]) )
         y = np.concatenate( (all_pred['clean']['output'], all_preds[dataset.test_label==2]) )
 
@@ -370,15 +372,13 @@ class Network_Class:
         binary_test_labels[binary_test_labels ==2] = 1
         masks = np.concatenate(( dataset.mask[dataset.test_label_name=='clean'], dataset.mask[dataset.test_label==2]))
 
-        if not pixel_wise:
+        if image_wise:
             all_TP, all_FP = compute_ROC(x, y, binary_test_labels)
-        
             result_path = root_path + '/Results/' + self.exp_name + '/ROC_clean_vs_realDefaults'
             write_json({'all_TP': all_TP, 'all_FP': all_FP}, result_path + '.json')
             print_ROC(result_path + '.json', result_path + '.png', AUC=True)
-        else : 
+        if pixel_wise:
             TP, FP = compute_ROC_pixel_wise(x, y, masks)
-
             result_path = root_path + '/Results/' + self.exp_name + '/PIXELWISE_ROC_clean_vs_realDefaults'
             write_json({'TP': TP, 'FP': FP}, result_path + '.json') 
             print_PIXEL_WISE_ROC(result_path + '.json', result_path + '.png', AUC=True)
@@ -387,7 +387,7 @@ class Network_Class:
     # ---------------------------------------------------------------------------------------
     # Perform network evaluation and compute ROC curve if ROC is True
     # ---------------------------------------------------------------------------------------
-    def evaluate_MCDropout(self, args, print_pred=True, pixel_wise = False, ROC=True, norms=['l0', 'l1', 'l2', 'linf']): 
+    def evaluate_MCDropout(self, args, print_pred=True, image_wise = False, pixel_wise = False, ROC=True, norms=['l0', 'l1', 'l2', 'linf']): 
 
         args['4_MCdrop']    = True
         my_dataset, new_net = instantiate_net(args, Train=False)
@@ -419,21 +419,18 @@ class Network_Class:
             binary_test_labels = np.concatenate(( my_dataset.test_label[my_dataset.test_label_name=='clean'], my_dataset.test_label[my_dataset.test_label_name==this_subset]))
             binary_test_labels[binary_test_labels ==2] = 1
             
-            if not pixel_wise: 
+            if image_wise: 
                 all_TP, all_FP = compute_ROC(x, y, binary_test_labels)
-        
                 result_path = root_path + '/Results_MCDropout/' + self.exp_name + '/ROC_clean_vs_' + this_subset 
                 write_json({'all_TP': all_TP, 'all_FP': all_FP}, result_path + '.json') 
                 print_ROC(result_path + '.json', result_path + '.png', AUC=True)
-            else : 
-                print('------', this_subset)
+            if pixel_wise:
                 TP, FP = compute_ROC_pixel_wise(x, y, masks)
-
                 result_path = root_path + '/Results_MCDropout/' + self.exp_name + '/PIXELWISE_ROC_clean_vs_' + this_subset 
                 write_json({'TP': TP, 'FP': FP}, result_path + '.json') 
                 print_PIXEL_WISE_ROC(result_path + '.json', result_path + '.png', AUC=True)
         
-        # Compute combined ROC curve
+        # Compute combined ROC curve (all defects categories vs. clean)
         all_def = my_dataset.test_label_name[my_dataset.test_label ==2] 
         used    = set()
         subsets = [x for x in all_def if x not in used and (used.add(x) or True)]
@@ -451,21 +448,16 @@ class Network_Class:
 
         binary_test_labels = np.concatenate(( my_dataset.test_label[my_dataset.test_label_name=='clean'], my_dataset.test_label[my_dataset.test_label==2]))
         binary_test_labels[binary_test_labels ==2] = 1
-        if not pixel_wise:
-            all_TP, all_FP = compute_ROC(x, y, binary_test_labels)
         
+        if image_wise: 
+            all_TP, all_FP = compute_ROC(x, y, binary_test_labels)
             result_path = root_path + '/Results_MCDropout/' + self.exp_name + '/ROC_clean_vs_realDefaults'
             write_json({'all_TP': all_TP, 'all_FP': all_FP}, result_path + '.json')
             print_ROC(result_path + '.json', result_path + '.png', AUC=True)
-        else : 
+        if pixel_wise: 
             TP, FP = compute_ROC_pixel_wise(x, y, masks)
-
             result_path = root_path + '/Results_MCDropout/' + self.exp_name + '/PIXELWISE_ROC_clean_vs_realDefaults'
             write_json({'TP': TP, 'FP': FP}, result_path + '.json') 
             print_PIXEL_WISE_ROC(result_path + '.json', result_path + '.png', AUC=True)
--
-
-
-
-
-            
+        
+    

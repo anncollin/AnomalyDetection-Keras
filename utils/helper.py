@@ -1,11 +1,11 @@
-from keras import backend as K
+#from keras import backend as K
 import os, sys
 from pathlib import Path
 
 import numpy as np
 import json
 from skimage.io import imread, imsave
-from skimage.color import grey2rgb
+from skimage.color import gray2rgb
 from skimage.util import random_noise
 from skimage.exposure import equalize_hist
 from skimage.transform import resize
@@ -54,7 +54,7 @@ def read_png(file_path, rescale_factor= 'Default'):
     
     if img is not None:
         if img.ndim == 2 :
-            img = grey2rgb(img)
+            img = gray2rgb(img)
         if np.max(img) <= 1: 
             img *= 255
         return img.astype(np.uint8)

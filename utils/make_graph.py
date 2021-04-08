@@ -77,36 +77,6 @@ def show_tight(im, file_path=None, GUI=False, row=None, col=None):
     fig.axes.get_yaxis().set_visible(False)
     plt.savefig(file_path, bbox_inches = 'tight', pad_inches = 0)
     plt.close()
-
-
-""" -----------------------------------------------------------------------------------------
-Show gradient evolution of generator/discritminator accross epochs
-INPUT : 
-    - DG_i, DG_out, DD_in, DD_out : all gradients
-    - file_path: path to store the resulting image
-OUTPUT : 
-    - png file in filepath location 
------------------------------------------------------------------------------------------ """ 
-
-def show_grad(DG_in, DG_out, DD_in, DD_out, folder_path, exp_name): 
-    nb_epoch = len(DG_in)
-
-    plot_path = folder_path + '/learning_graphs/' + exp_name + '_grad.png'
-    if not os.path.exists( str(Path(plot_path).parent )):
-        os.makedirs( str(Path(plot_path).parent))
-
-    plt.plot(range(1,nb_epoch), DG_in, color=colors['train'], linewidth=2, label='Generator (in)')
-    plt.plot(range(1,nb_epoch), DG_out, color=colors['train'], linestyle='--', linewidth=2, label='Generator (out)')
-    plt.plot(range(1,nb_epoch), DD_in, color=colors['val'], linewidth=2, label='Discriminator (in)')
-    plt.plot(range(1,nb_epoch), DD_out, color=colors['val'], linestyle='--', linewidth=2, label='Discriminator (out)')
-    plt.ylabel('Gradient')
-    plt.xlabel('Epoch')
-    plt.legend(bbox_to_anchor=(1.04,1), loc="upper left", fontsize=12)
-    plt.tight_layout()
-    if not os.path.exists( str(Path(folder_path).parent )):
-        os.makedirs( str(Path(folder_path).parent))
-    plt.savefig(folder_path)
-    plt.close()
     
 
 """ -----------------------------------------------------------------------------------------
@@ -185,17 +155,17 @@ def print_evaluation(input, prediction, file_path, map=False, Vmin=0, Vmax=255):
     plt.rcParams['savefig.pad_inches'] = 0
     f= plt.figure()
 
-    fig = f.add_subplot('131')
+    fig = f.add_subplot(131)
     fig.set_title('Input', fontsize=16)
     fig.imshow(input, cmap = 'gray', interpolation = 'bicubic')
     fig.axis('off')
 
-    fig = f.add_subplot('132')
+    fig = f.add_subplot(132)
     fig.set_title('Prediction', fontsize=16)
     fig.imshow(prediction, cmap = 'gray', interpolation = 'bicubic')
     fig.axis('off')
 
-    fig = f.add_subplot('133')
+    fig = f.add_subplot(133)
     diff_im = diff(input,prediction)
     if map: 
         #mask = np.ma.masked_where(diff_im < 0.1, diff_im)
@@ -276,17 +246,17 @@ def print_MCevaluation(input, prediction, variance, file_path, Vmin=0, Vmax=255)
     plt.rcParams['savefig.pad_inches'] = 0
     f= plt.figure()
 
-    fig = f.add_subplot('131')
+    fig = f.add_subplot(131)
     fig.set_title('Input', fontsize=16)
     fig.imshow(input, cmap = 'gray', interpolation = 'bicubic')
     fig.axis('off')
 
-    fig = f.add_subplot('132')
+    fig = f.add_subplot(132)
     fig.set_title('Mean Prediction', fontsize=16)
     fig.imshow(prediction, cmap = 'gray', interpolation = 'bicubic')
     fig.axis('off')
 
-    fig = f.add_subplot('133')
+    fig = f.add_subplot(133)
     fig.imshow(input, cmap = 'gray', interpolation = 'bicubic')
     fig.imshow(variance, cmap = 'cividis', interpolation = 'bicubic',alpha=.9,  vmin=Vmin, vmax=Vmax)
     fig.set_title('Variance', fontsize=16)
@@ -367,12 +337,12 @@ def print_evaluationMCDRopout(input, pred, var, file_path):
     plt.rcParams['savefig.pad_inches'] = 0
     f= plt.figure()
 
-    fig = f.add_subplot('131')
+    fig = f.add_subplot(131)
     fig.set_title('Input', fontsize=16)
     fig.imshow(input, cmap = 'gray', interpolation = 'bicubic')
     fig.axis('off')
 
-    fig = f.add_subplot('132')
+    fig = f.add_subplot(132)
     fig.set_title('Mean Pred', fontsize=16)
     fig.imshow(pred, cmap = 'gray', interpolation = 'bicubic')
     fig.axis('off')
@@ -382,7 +352,7 @@ def print_evaluationMCDRopout(input, pred, var, file_path):
         var = rgb2gray(var)*255
     mask = var
     mask = np.ma.masked_where(mask < 0.1, mask)
-    fig = f.add_subplot('133')
+    fig = f.add_subplot(133)
     fig.set_title('Uncertainty', fontsize=16)
     fig.imshow(input, cmap = 'gray', interpolation = 'bicubic')
     fig.imshow(mask, cmap = 'jet', interpolation = 'bicubic')

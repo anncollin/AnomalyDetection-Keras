@@ -29,22 +29,11 @@
     },
 
 	{
-		"coxa": {
-			"root": "/export/home/anncollin/Desktop/ADRIC/Server", 
-			"code": "/export/home/anncollin/Desktop/ADRIC/Server/code", 
-			"data": "/export/home/anncollin/Desktop/ADRIC/Server/data"
-		},
-		"cassiopee":{
-			"root": "/home/anncollin/anomaly_detection",
-			"code": "/home/anncollin/anomaly_detection/code", 
-			"data": "/home/anncollin/anomaly_detection/data"
-		}, 
-		"betelgeuse":{
-			"root": "/home/anncollin/anomaly_detection",
-			"code": "/home/anncollin/anomaly_detection/code", 
-			"data": "/data/workdir/anncollin/data"
-		} 
-		
+		"mycomputerName": {
+			"root": "/home/dir", 
+			"code": "/home/dir/code", 
+			"data": "/home/dir/data"
+		}
 	}
 
 ]
